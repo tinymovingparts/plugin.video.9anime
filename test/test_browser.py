@@ -4,8 +4,6 @@ import unittest
 
 from resources.lib.NineAnimeBrowser import NineAnimeBrowser
 from resources.lib.token_decoder import TokenDecoder
-from resources.lib.ui import http
-from resources.lib.ui.embed_extractor import load_video_from_url, _EMBED_EXTRACTORS
 
 __all__ = [ "TestBrowser" ]
 
@@ -26,13 +24,6 @@ class TestBrowser(unittest.TestCase):
         self.assertEquals(len(search_item), 1)
         self.assertEquals(search_item[0]['url'], 'animes/naruto-shippuuden-dub.00zr')
         self.assertEquals(search_item[0]['is_dir'], True)
-
-        #elf.assertIn({
-        #    'url': 'animes/naruto-shippuuden-dub.00zr',
-        #    'is_dir': True,
-        #    # 'image': search_res[0]['image'],
-        #    'name': 'Naruto: Shippuuden (Dub)'
-        #}, search_res)
         self._sleep()
 
     def test_search_with_pages(self):
@@ -135,26 +126,21 @@ class TestBrowser(unittest.TestCase):
         "get_episode_sources find nartuo's first episode"
         sources = self.browser.get_episode_sources('one-piece.ov8', 1)
         self.assertGreaterEqual(len(sources), 3)
-        video_urls = map(lambda x: load_video_from_url(x[1]), sources)
         self._sleep()
 
     def test_token_decode(self):
         text1 = '(+((!+[]+!![]+!![]+!![]+!![]+!![]+[])+(!+[]+!![]+!![]+!![]+!![]+!![]+!![]+!![]+!![]+[])+(+!![]+[])+(!+[]+!![]+[])))>>(!+[]+!![]+!![]+!![]+!![]+!![]+!![])'
         text2 = '((+((+!![]+[])+(!+[]+!![]+!![]+!![]+!![]+[])+(!+[]+!![]+!![]+!![]+!![]+!![]+[])))-(!+[]+!![]+!![]+!![]+!![]+!![]+!![]+!![]+!![]))/(!+[]+!![]+!![])'
-        result1 = TokenDecoder.decode_as_int(text1)
-        result2 = TokenDecoder.decode_as_int(text2)
+        result1 = TokenDecoder._decode_as_int(text1)
+        result2 = TokenDecoder._decode_as_int(text2)
         self.assertEquals(54, result1)
         self.assertEquals(49, result2)
+        self._sleep()
 
     def test_token_load(self):
-        result = TokenDecoder.get_token(http.send_request)
+        result = self.browser.get_token()
         self.assertGreater(len(result), 0)
-
-    def test_grab_info(self):
-        extractor = _EMBED_EXTRACTORS['https://9anime.is/watch/']
-
-        result = extractor('https://9anime.is/watch/alice-to-zouroku.532v/72qw86', None)
-        self.assertGreater(len(result), 0)
+        self._sleep()
 
 if __name__ == "__main__":
     unittest.main()

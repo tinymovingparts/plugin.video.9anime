@@ -1,3 +1,4 @@
+import urllib
 from http_imports import *
 from resources.lib.token_decoder import TokenDecoder
 
@@ -12,15 +13,23 @@ class SSLAdapter(HTTPAdapter):
                               block=block)
 
 class PrepReq(object):
-    def __init__(self):
+    def __init__(self, session):
         self._dict = {}
+        self._cookies = session.cookies
 
     def add_header(self, key, value):
         self._dict[key] = value
 
+    def add_cookie(self, key, value):
+        self._cookies.update({ key: value })
+
     @property
     def headers(self):
         return self._dict
+
+    @property
+    def cookies(self):
+        return self._cookies.keys()
 
 def Session():
     global _SESSION
@@ -31,11 +40,6 @@ def Session():
             'User-Agent': _USER_AGENT,
         })
         _SESSION = s
-
-        token = TokenDecoder.get_token(lambda x: __send_request(s, x, None, None, False))
-        _SESSION.cookies.update({
-            TokenDecoder.TOKEN_COOKIE_NAME : token
-        })
 
     return _SESSION
 
@@ -62,7 +66,7 @@ def head_request(url, set_request=None):
     return send_request(url, set_request=set_request, head=True)
 
 def __send_request(session, url, data=None, set_request=None, head=False):
-    r = PrepReq()
+    r = PrepReq(session)
     if set_request:
         r = set_request(r)
 

@@ -3,6 +3,7 @@ import urllib
 from ui import utils
 from ui import BrowserBase
 from ui import http
+from token_decoder import TokenDecoder
 
 class NineAnimeBrowser(BrowserBase.BrowserBase):
     _BASE_URL = "http://9anime.is"
@@ -25,6 +26,7 @@ class NineAnimeBrowser(BrowserBase.BrowserBase):
                re.DOTALL)
 
     _EPISODE_LINK_RE = re.compile("<li><div><a\shref=\"/([-\w\s\d]+?)/(\d+?)\"\sclass=\"anm_det_pop\"><strong>(.+?)</strong></a><i\sclass=\"anititle\">(.+?)</i>", re.DOTALL)
+    _TOKEN_COOKIE_NAME = 'reqkey'
 
     def _parse_anime_view(self, res):
         name = res[2]
@@ -71,6 +73,20 @@ class NineAnimeBrowser(BrowserBase.BrowserBase):
         servers = dict([(i[0], map(self._format_episode(anime_url),
                                    i[1][::-1])) for i in servers])
         return servers
+
+    def _get_request(self, url, data=None):
+        def set_request(request):
+            if self._TOKEN_COOKIE_NAME not in request.cookies:
+                request.add_cookie(self._TOKEN_COOKIE_NAME, self.get_token())
+            return request
+
+        return super(NineAnimeBrowser, self)._get_request(url, data, set_request)
+
+    def get_token(self):
+        # Using Parent _get_request without set_request hook.
+        encoded_token = super(NineAnimeBrowser, self)._get_request(self._to_url('/token'), { 'v1': None })
+
+        return TokenDecoder.decode_token(encoded_token)
 
     def search_site(self, search_string, page=1):
         data = {
