@@ -1,6 +1,8 @@
 import re
 import urllib
 import urlparse
+from operator import itemgetter
+
 import utils
 import http
 import json
@@ -18,11 +20,21 @@ def load_video_from_url(in_url):
     except:
         raise
 
-    for extractor in _EMBED_EXTRACTORS.keys():
-        if in_url.startswith(extractor):
-            return _EMBED_EXTRACTORS[extractor](url, page_content)
+    try:
+        for extractor in _EMBED_EXTRACTORS.keys():
+            if in_url.startswith(extractor):
+                extract_result =_EMBED_EXTRACTORS[extractor](url, page_content)
+                sorted_result = sorted(extract_result, key=__sort_extract_result, reverse=True)
+                return sorted_result
+    except:
+        pass
     print "[*E*] No extractor found for %s" % url
     return None
+
+def __sort_extract_result(data):
+    first_el = data[0]
+    first_el_clean = ''.join(ch for ch in first_el if ch.isdigit())
+    return int(first_el_clean)
 
 def __set_referer(url):
     def f(req):
@@ -41,8 +53,8 @@ def __check_video_list(refer_url, vidlist):
     nlist = []
     for item in vidlist:
         try:
-            nlist.append((item[0], http.head_request(item[1],
-                                                     set_request=referer).url))
+            temp_req = http.head_request(item[1], set_request=referer)
+            nlist.append((item[0], temp_req.url))
         except Exception, e:
             # Just don't add source.
             pass
@@ -67,8 +79,11 @@ def __9anime_extract_direct(refer_url, grabInfo):
 def __extract_9anime(url, page_content):
     episode_id = url.rsplit('/', 1)[1]
     domain = urlparse.urlparse(url).netloc
-    url = "http://%s/ajax/episode/info?id=%s&update=0" % (domain, episode_id)
-    grabInfo = json.loads(http.send_request(url).text)
+    scheme = urlparse.urlparse(url).scheme
+    url = "%s://%s/ajax/episode/info?id=%s&update=0" % (scheme, domain, episode_id)
+    urlRequest= http.send_request(url)
+
+    grabInfo = json.loads(urlRequest.text)
     if 'error' in grabInfo.keys():
         raise Exception('error while trying to fetch info: %s' %
                         grabInfo['error'])
@@ -253,7 +268,7 @@ __register_extractor("http://embed.videoweed.es/", __extract_swf_player)
 
 __register_extractor("http://embed.novamov.com/", __extract_swf_player)
 
-__register_extractor("https://openload.co/embed/", __extract_openload)
+#__register_extractor("https://openload.co/embed/", __extract_openload)
 
 # TODO: debug to find how to extract
 __register_extractor("http://www.animeram.tv/files/ads/160.html", __ignore_extractor)

@@ -1,7 +1,11 @@
 #!/usr/local/bin/python2
-import unittest
 import time
+import unittest
+
 from resources.lib.NineAnimeBrowser import NineAnimeBrowser
+from resources.lib.token_decoder import TokenDecoder
+from resources.lib.ui import http
+from resources.lib.ui.embed_extractor import load_video_from_url, _EMBED_EXTRACTORS
 
 __all__ = [ "TestBrowser" ]
 
@@ -16,13 +20,19 @@ class TestBrowser(unittest.TestCase):
     def test_search_site(self):
         "search site finds naruto"
         search_res = self.browser.search_site("Naruto Shippuden")
-        self.assertGreaterEqual(len(search_res), 1)
-        self.assertEqual(search_res[0], {
-            'url': 'animes/naruto-shippuuden.qv3',
-            'is_dir': True,
-            'image': search_res[0]['image'],
-            'name': 'Naruto: Shippuuden'
-        })
+        self.assertGreater(len(search_res), 0)
+
+        search_item = filter(lambda x: x['name'] == 'Naruto: Shippuuden (Dub)', search_res)
+        self.assertEquals(len(search_item), 1)
+        self.assertEquals(search_item[0]['url'], 'animes/naruto-shippuuden-dub.00zr')
+        self.assertEquals(search_item[0]['is_dir'], True)
+
+        #elf.assertIn({
+        #    'url': 'animes/naruto-shippuuden-dub.00zr',
+        #    'is_dir': True,
+        #    # 'image': search_res[0]['image'],
+        #    'name': 'Naruto: Shippuuden (Dub)'
+        #}, search_res)
         self._sleep()
 
     def test_search_with_pages(self):
@@ -77,13 +87,13 @@ class TestBrowser(unittest.TestCase):
     def test_get_genres(self):
         "get_genres returns genere list"
         genre_list = self.browser.get_genres()
-        self.assertGreater(len(genre_list), 10)
-        self.assertEqual(genre_list[0], {
-            'url': 'genre/adventure/1',
+        self.assertGreater(len(genre_list), 0)
+        self.assertIn({
+            'url': 'genre/comedy/1',
             'is_dir': True,
             'image': '',
-            'name': 'Adventure'
-        })
+            'name': 'Comedy'
+        }, genre_list)
         self._sleep()
 
     def test_get_genre(self):
@@ -120,6 +130,31 @@ class TestBrowser(unittest.TestCase):
         sources = self.browser.get_episode_sources('one-piece.ov8', 1)
         self.assertGreaterEqual(len(sources), 3)
         self._sleep()
+
+    def test_get_episode_video_url(self):
+        "get_episode_sources find nartuo's first episode"
+        sources = self.browser.get_episode_sources('one-piece.ov8', 1)
+        self.assertGreaterEqual(len(sources), 3)
+        video_urls = map(lambda x: load_video_from_url(x[1]), sources)
+        self._sleep()
+
+    def test_token_decode(self):
+        text1 = '(+((!+[]+!![]+!![]+!![]+!![]+!![]+[])+(!+[]+!![]+!![]+!![]+!![]+!![]+!![]+!![]+!![]+[])+(+!![]+[])+(!+[]+!![]+[])))>>(!+[]+!![]+!![]+!![]+!![]+!![]+!![])'
+        text2 = '((+((+!![]+[])+(!+[]+!![]+!![]+!![]+!![]+[])+(!+[]+!![]+!![]+!![]+!![]+!![]+[])))-(!+[]+!![]+!![]+!![]+!![]+!![]+!![]+!![]+!![]))/(!+[]+!![]+!![])'
+        result1 = TokenDecoder.decode_as_int(text1)
+        result2 = TokenDecoder.decode_as_int(text2)
+        self.assertEquals(54, result1)
+        self.assertEquals(49, result2)
+
+    def test_token_load(self):
+        result = TokenDecoder.get_token(http.send_request)
+        self.assertGreater(len(result), 0)
+
+    def test_grab_info(self):
+        extractor = _EMBED_EXTRACTORS['https://9anime.is/watch/']
+
+        result = extractor('https://9anime.is/watch/alice-to-zouroku.532v/72qw86', None)
+        self.assertGreater(len(result), 0)
 
 if __name__ == "__main__":
     unittest.main()

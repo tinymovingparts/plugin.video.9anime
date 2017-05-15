@@ -1,6 +1,7 @@
 from http_imports import *
+from resources.lib.token_decoder import TokenDecoder
 
-_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36'
+_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
 _SESSION = None
 
 class SSLAdapter(HTTPAdapter):
@@ -30,6 +31,11 @@ def Session():
             'User-Agent': _USER_AGENT,
         })
         _SESSION = s
+
+        token = TokenDecoder.get_token(lambda x: __send_request(s, x, None, None, False))
+        _SESSION.cookies.update({
+            TokenDecoder.TOKEN_COOKIE_NAME : token
+        })
 
     return _SESSION
 
