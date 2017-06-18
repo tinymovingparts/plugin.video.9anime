@@ -106,7 +106,7 @@ class NineAnimeBrowser(BrowserBase.BrowserBase):
             "sort" : "episode_last_added_at:desc",
             "status[]" : "airing"
         }, page);
-    
+
     def get_latest(self, page=1):
         data = {
             "page": page,
