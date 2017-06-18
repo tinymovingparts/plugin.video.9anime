@@ -107,8 +107,14 @@ class NineAnimeBrowser(BrowserBase.BrowserBase):
             "status[]" : "airing"
         }, page);
 
+    def get_most_watched_subbed(self,  page=1):
+        return self._get_by_filter('most_watached_subbed', {
+            "language" : "subbed",
+            "sort" : "views:desc"
+        }, page);
+    
     def get_most_watched_dubbed(self,  page=1):
-        return self._get_by_filter('most_watached_dubbed', {
+        return self._get_by_filter('most_watched_dubbed', {
             "language" : "dubbed",
             "sort" : "views:desc"
         }, page);
