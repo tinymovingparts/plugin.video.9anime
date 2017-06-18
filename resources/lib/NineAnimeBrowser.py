@@ -108,7 +108,7 @@ class NineAnimeBrowser(BrowserBase.BrowserBase):
         }, page);
 
     def get_most_watched_dubbed(self,  page=1):
-        return self.get_by_filter('most_watached_dubbed', {
+        return self._get_by_filter('most_watached_dubbed', {
             "language" : "dubbed",
             "sort" : "views:desc"
         }, page);
